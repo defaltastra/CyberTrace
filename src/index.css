@@ -1,0 +1,172 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root, [data-theme="toxic-earth"] {
+    /* Toxic Earth (Default) */
+    --color-bg-rgb: 10, 21, 18;
+    --color-panel-rgb: 25, 53, 43;
+    --color-panel-light-rgb: 31, 63, 52;
+    --color-accent-rgb: 72, 213, 151;
+    --color-accent-dim-rgb: 42, 122, 88;
+    --color-amber-rgb: 217, 155, 83;
+    --color-critical-rgb: 224, 92, 92;
+    --color-text-rgb: 231, 229, 217;
+    --color-text-muted-rgb: 155, 154, 143;
+    --color-border-subtle-rgb: 42, 63, 54;
+  }
+
+  [data-theme="void"] {
+    /* Void Theme:
+       Void: #100D1C (16, 13, 28)
+       Surface: #251C38 (37, 28, 56)
+       Signal: #70F0D0 (112, 240, 208)
+       Accent: #B49AFF (180, 154, 255)
+       Critical: #FF6B8A (255, 107, 138)
+       Text: #EDE9FE (237, 233, 254)
+    */
+    --color-bg-rgb: 16, 13, 28;
+    --color-panel-rgb: 37, 28, 56;
+    --color-panel-light-rgb: 50, 37, 76;
+    --color-accent-rgb: 180, 154, 255;
+    --color-accent-dim-rgb: 132, 101, 212;
+    --color-amber-rgb: 112, 240, 208;
+    --color-critical-rgb: 255, 107, 138;
+    --color-text-rgb: 237, 233, 254;
+    --color-text-muted-rgb: 167, 155, 191;
+    --color-border-subtle-rgb: 61, 45, 94;
+  }
+
+  [data-theme="gruvbox"] {
+    /* Gruvbox Cyber:
+       Bg: #1d2021 (29, 32, 33)
+       Surface: #282828 (40, 40, 40)
+       Accent: #b8bb26 (184, 187, 38)
+       Signal: #fabd2f (250, 189, 47)
+       Critical: #fb4934 (251, 73, 52)
+       Text: #ebdbb2 (235, 219, 178)
+    */
+    --color-bg-rgb: 29, 32, 33;
+    --color-panel-rgb: 40, 40, 40;
+    --color-panel-light-rgb: 60, 56, 54;
+    --color-accent-rgb: 184, 187, 38;
+    --color-accent-dim-rgb: 121, 116, 14;
+    --color-amber-rgb: 250, 189, 47;
+    --color-critical-rgb: 251, 73, 52;
+    --color-text-rgb: 235, 219, 178;
+    --color-text-muted-rgb: 168, 153, 132;
+    --color-border-subtle-rgb: 80, 73, 69;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+  html, body {
+    background-color: rgb(var(--color-bg-rgb)) !important;
+    color: rgb(var(--color-text-rgb)) !important;
+    font-family: 'Inter', system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgb(var(--color-bg-rgb));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(var(--color-accent-rgb), 0.4);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--color-accent-rgb), 0.7);
+  }
+}
+
+@layer components {
+  .panel {
+    background-color: rgb(var(--color-panel-rgb));
+    border: 1px solid rgb(var(--color-border-subtle-rgb));
+    border-radius: 0.75rem;
+  }
+  .panel-light {
+    background-color: rgb(var(--color-panel-light-rgb));
+    border: 1px solid rgb(var(--color-border-subtle-rgb));
+    border-radius: 0.5rem;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer;
+  }
+  .btn-primary {
+    background-color: rgb(var(--color-accent-rgb));
+    color: rgb(var(--color-bg-rgb));
+    @apply btn hover:opacity-90 active:scale-95;
+  }
+  .input {
+    background-color: rgb(var(--color-panel-light-rgb));
+    border: 1px solid rgb(var(--color-border-subtle-rgb));
+    color: rgb(var(--color-text-rgb));
+    @apply rounded-lg px-3 py-2 text-sm placeholder:text-text-muted focus:outline-none transition-colors;
+  }
+  .select {
+    @apply input appearance-none cursor-pointer;
+  }
+}
+
+/* Leaflet theme styles */
+.leaflet-container {
+  background: rgb(var(--color-bg-rgb)) !important;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Default / Toxic Earth tile filter */
+:root .leaflet-tile, [data-theme="toxic-earth"] .leaflet-tile {
+  filter: brightness(0.55) saturate(0.65) hue-rotate(130deg);
+}
+
+/* Void tile filter (deep dark purple / cyan glow) */
+[data-theme="void"] .leaflet-tile {
+  filter: brightness(0.52) saturate(0.85) hue-rotate(225deg);
+}
+
+/* Gruvbox tile filter (warm sepia retro hacker) */
+[data-theme="gruvbox"] .leaflet-tile {
+  filter: brightness(0.62) saturate(0.7) sepia(0.4) hue-rotate(20deg);
+}
+
+.leaflet-control-attribution {
+  background: rgba(var(--color-bg-rgb), 0.85) !important;
+  color: rgb(var(--color-text-muted-rgb)) !important;
+  font-size: 9px !important;
+}
+.leaflet-control-attribution a {
+  color: rgb(var(--color-accent-rgb)) !important;
+}
+.leaflet-control-zoom a {
+  background: rgb(var(--color-panel-rgb)) !important;
+  color: rgb(var(--color-text-rgb)) !important;
+  border-color: rgb(var(--color-border-subtle-rgb)) !important;
+}
+.leaflet-control-zoom a:hover {
+  background: rgb(var(--color-panel-light-rgb)) !important;
+}
+.threat-marker-popup .leaflet-popup-content-wrapper {
+  background: rgb(var(--color-panel-rgb));
+  border: 1px solid rgb(var(--color-border-subtle-rgb));
+  border-radius: 12px;
+  color: rgb(var(--color-text-rgb));
+  box-shadow: 0 12px 36px rgba(0,0,0,0.55);
+}
+.threat-marker-popup .leaflet-popup-tip {
+  background: rgb(var(--color-panel-rgb));
+}
+.threat-marker-popup .leaflet-popup-close-button {
+  color: rgb(var(--color-text-muted-rgb)) !important;
+}
