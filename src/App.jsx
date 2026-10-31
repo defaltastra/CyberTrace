@@ -1,21 +1,36 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Header from './components/Header';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ThreatDetail from './components/ThreatDetail';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Views
 import DashboardView from './views/DashboardView';
-import GlobalMapView from './views/GlobalMapView';
-import ThreatExplorerView from './views/ThreatExplorerView';
-import LiveFeedView from './views/LiveFeedView';
-import SettingsView from './views/SettingsView';
-import AboutView from './views/AboutView';
+import AboutSection from './components/AboutSection';
+
+import { DEFAULT_FILTERS } from './components/Filters';
 
 import { fetchLiveThreats } from './services/threatService';
 import { applyTheme } from './utils/theme';
 import { THREATS as FALLBACK_THREATS } from './data/threats';
+
+const GlobalMapView = lazy(() => import('./views/GlobalMapView'));
+const ThreatExplorerView = lazy(() => import('./views/ThreatExplorerView'));
+const LiveFeedView = lazy(() => import('./views/LiveFeedView'));
+const SettingsView = lazy(() => import('./views/SettingsView'));
+
+function Loader() {
+  return (
+    <div className="h-[60dvh] flex flex-col items-center justify-center gap-3">
+      <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+      <div className="text-sm font-mono text-text-muted">
+        Initialisation de CyberTrace et synchronisation des flux CISA KEV...
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [threats, setThreats] = useState([]);
@@ -24,31 +39,21 @@ export default function App() {
   const [catalogVersion, setCatalogVersion] = useState('2026.10');
   const [selectedThreat, setSelectedThreat] = useState(null);
 
-  // Settings: Theme & Refresh Rate
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('cybertrace_theme') || 'toxic-earth';
-  });
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem('cybertrace_theme') || 'toxic-earth'
+  );
 
   const [refreshInterval, setRefreshInterval] = useState(() => {
     const saved = localStorage.getItem('cybertrace_refresh_interval');
     return saved !== null ? Number(saved) : 30;
   });
 
-  // Countdown for auto-refresh in seconds
   const [countdown, setCountdown] = useState(refreshInterval || 30);
 
-  // Apply theme to DOM and CSS variables immediately
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
-  // Handle theme switch
-  const handleThemeChange = (newTheme) => {
-    setTheme(newTheme);
-    applyTheme(newTheme);
-  };
-
-  // Handle refresh interval change
   const handleRefreshIntervalChange = (val) => {
     setRefreshInterval(val);
     setCountdown(val);
@@ -56,35 +61,22 @@ export default function App() {
   };
 
   const handleResetSettings = () => {
-    handleThemeChange('toxic-earth');
+    setTheme('toxic-earth');
     handleRefreshIntervalChange(30);
     localStorage.removeItem('cybertrace_theme');
     localStorage.removeItem('cybertrace_refresh_interval');
-    localStorage.removeItem('cybertrace_otx_key');
   };
 
-  // Filters state
-  const [filters, setFilters] = useState({
-    search: '',
-    type: '',
-    severity: '',
-    source: '',
-    country: '',
-  });
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
-  // Load real CISA KEV + telemetry threats
   const loadThreats = useCallback(async (isManual = false) => {
     if (isManual) setIsRefreshing(true);
     else setIsLoading(true);
 
     try {
       const data = await fetchLiveThreats({ maxItems: 140 });
-      if (data && data.threats && data.threats.length > 0) {
-        setThreats(data.threats);
-        if (data.catalogVersion) setCatalogVersion(data.catalogVersion);
-      } else {
-        setThreats(FALLBACK_THREATS);
-      }
+      setThreats(data.threats);
+      setCatalogVersion(data.catalogVersion);
     } catch (err) {
       console.warn('Threat fetch fallback to bundled telemetry:', err);
       setThreats(FALLBACK_THREATS);
@@ -94,12 +86,10 @@ export default function App() {
     }
   }, []);
 
-  // Initial load
   useEffect(() => {
     loadThreats(false);
   }, [loadThreats]);
 
-  // Handle manual refresh from header button
   const handleManualRefresh = useCallback(() => {
     loadThreats(true);
     if (refreshInterval > 0) {
@@ -107,7 +97,6 @@ export default function App() {
     }
   }, [loadThreats, refreshInterval]);
 
-  // Live countdown timer & auto-refresh execution
   useEffect(() => {
     if (!refreshInterval || refreshInterval <= 0) return;
 
@@ -126,7 +115,6 @@ export default function App() {
     return () => clearInterval(timer);
   }, [refreshInterval, loadThreats]);
 
-  // Global filtering logic
   const filteredThreats = useMemo(() => {
     return threats.filter((threat) => {
       if (filters.type && threat.type !== filters.type) return false;
@@ -161,118 +149,128 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col bg-bg text-text selection:bg-accent selection:text-bg">
-        {/* 1. Header with Live Countdown next to Actualiser */}
-        <Header
-          criticalCount={criticalCount}
-          onRefresh={handleManualRefresh}
-          isRefreshing={isRefreshing}
-          catalogVersion={catalogVersion}
-          refreshCountdown={countdown}
-          refreshInterval={refreshInterval}
-        />
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[999999] focus:px-3 focus:py-2 focus:rounded-lg focus:bg-accent focus:text-bg focus:text-xs focus:font-mono"
+        >
+          Aller au contenu principal
+        </a>
+        <div className="sticky top-0 z-50">
+          <Header
+            criticalCount={criticalCount}
+            onRefresh={handleManualRefresh}
+            isRefreshing={isRefreshing}
+            catalogVersion={catalogVersion}
+            refreshCountdown={countdown}
+            refreshInterval={refreshInterval}
+          />
 
-        {/* 2. Top Navigation Bar */}
-        <Navbar criticalCount={criticalCount} />
+          <Navbar />
+        </div>
 
-        {/* 3. Main Views */}
-        <main className="flex-1 px-4 sm:px-6 py-5 max-w-[1600px] w-full mx-auto">
+        <main
+          id="main"
+          tabIndex={-1}
+          className="flex-1 px-4 sm:px-6 py-5 max-w-[1600px] w-full mx-auto"
+        >
           {isLoading ? (
-            <div className="h-[60vh] flex flex-col items-center justify-center gap-3">
-              <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-              <div className="text-sm font-mono text-text-muted">
-                Initialisation de CyberTrace et synchronisation des flux CISA KEV...
-              </div>
-            </div>
+            <Loader />
           ) : (
-            <Routes>
-              {/* 1. Tableau de Bord (Executive & Analytics Overview) */}
-              <Route
-                path="/"
-                element={
-                  <DashboardView
-                    threats={threats}
-                    selectedThreat={selectedThreat}
-                    onSelectThreat={setSelectedThreat}
-                    theme={theme}
+            <ErrorBoundary>
+              <Suspense fallback={<Loader />}>
+                <Routes>
+                  <Route
+                    path="/"
+                    element={
+                      <DashboardView
+                        threats={threats}
+                        selectedThreat={selectedThreat}
+                        onSelectThreat={setSelectedThreat}
+                        theme={theme}
+                      />
+                    }
                   />
-                }
-              />
 
-              {/* 2. Carte Mondiale (Dedicated Full-Screen Interactive Map) */}
-              <Route
-                path="/map"
-                element={
-                  <GlobalMapView
-                    threats={threats}
-                    filteredThreats={filteredThreats}
-                    filters={filters}
-                    onFiltersChange={setFilters}
-                    selectedThreat={selectedThreat}
-                    onSelectThreat={setSelectedThreat}
+                  <Route
+                    path="/map"
+                    element={
+                      <GlobalMapView
+                        threats={threats}
+                        filteredThreats={filteredThreats}
+                        filters={filters}
+                        onFiltersChange={setFilters}
+                        selectedThreat={selectedThreat}
+                        onSelectThreat={setSelectedThreat}
+                      />
+                    }
                   />
-                }
-              />
 
-              {/* 3. Explorateur (Search, Filter, Export) */}
-              <Route
-                path="/explorer"
-                element={
-                  <ThreatExplorerView
-                    threats={threats}
-                    filteredThreats={filteredThreats}
-                    filters={filters}
-                    onFiltersChange={setFilters}
-                    selectedThreat={selectedThreat}
-                    onSelectThreat={setSelectedThreat}
+                  <Route
+                    path="/explorer"
+                    element={
+                      <ThreatExplorerView
+                        filteredThreats={filteredThreats}
+                        filters={filters}
+                        onFiltersChange={setFilters}
+                        onSelectThreat={setSelectedThreat}
+                      />
+                    }
                   />
-                }
-              />
 
-              {/* 4. Flux en Direct (Live Threat Stream) */}
-              <Route
-                path="/feed"
-                element={
-                  <LiveFeedView
-                    threats={threats}
-                    onRefresh={handleManualRefresh}
-                    isRefreshing={isRefreshing}
-                    catalogVersion={catalogVersion}
-                    selectedThreat={selectedThreat}
-                    onSelectThreat={setSelectedThreat}
+                  <Route
+                    path="/feed"
+                    element={
+                      <LiveFeedView
+                        threats={threats}
+                        onRefresh={handleManualRefresh}
+                        isRefreshing={isRefreshing}
+                        onSelectThreat={setSelectedThreat}
+                      />
+                    }
                   />
-                }
-              />
 
-              {/* 5. Paramètres (Themes Void, Gruvbox, Toxic Earth + Refresh Rate) */}
-              <Route
-                path="/settings"
-                element={
-                  <SettingsView
-                    theme={theme}
-                    onThemeChange={handleThemeChange}
-                    refreshInterval={refreshInterval}
-                    onRefreshIntervalChange={handleRefreshIntervalChange}
-                    onResetSettings={handleResetSettings}
+                  <Route
+                    path="/settings"
+                    element={
+                      <SettingsView
+                        theme={theme}
+                        onThemeChange={setTheme}
+                        refreshInterval={refreshInterval}
+                        onRefreshIntervalChange={handleRefreshIntervalChange}
+                        onResetSettings={handleResetSettings}
+                      />
+                    }
                   />
-                }
-              />
 
-              {/* 6. À Propos & Créateurs */}
-              <Route path="/about" element={<AboutView />} />
-            </Routes>
+                  <Route path="/about" element={<div className="max-w-5xl mx-auto py-2"><AboutSection /></div>} />
+
+                  <Route
+                    path="*"
+                    element={
+                      <div className="min-h-[60dvh] flex flex-col items-center justify-center gap-3 px-4 text-center">
+                        <h1 className="text-lg font-semibold text-text">Page introuvable</h1>
+                        <p className="max-w-md text-sm font-mono text-text-muted">
+                          Cette adresse ne correspond à aucune vue de CyberTrace.
+                        </p>
+                        <Link to="/" className="text-sm font-mono text-accent hover:underline">
+                          Retour au tableau de bord
+                        </Link>
+                      </div>
+                    }
+                  />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
           )}
         </main>
 
-        {/* Global Inspection Modal for any threat clicked anywhere */}
         {selectedThreat && (
           <ThreatDetail
             threat={selectedThreat}
             onClose={() => setSelectedThreat(null)}
-            isModal={true}
           />
         )}
 
-        {/* 4. Footer with mandatory creators credits and LinkedIn links */}
         <Footer />
       </div>
     </BrowserRouter>

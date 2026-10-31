@@ -1,5 +1,6 @@
 import { THREAT_CATEGORIES, SEVERITY_LEVELS } from '../data/threats';
-import { Clock, MapPin, ChevronRight, ShieldAlert, Sparkles, Filter } from 'lucide-react';
+import { themeColor } from '../utils/theme';
+import { Clock, MapPin, ChevronRight, ShieldAlert, Filter } from 'lucide-react';
 
 function timeAgo(ts) {
   if (!ts) return '';
@@ -42,7 +43,7 @@ export default function ThreatList({ threats = [], selected, onSelect, title = "
         ) : (
           threats.map((threat) => {
             const cat = THREAT_CATEGORIES[threat.type] || { label: threat.type, color: '#48D597' };
-            const sev = SEVERITY_LEVELS[threat.severity] || { label: threat.severity, color: '#D99B53' };
+            const sev = SEVERITY_LEVELS[threat.severity] || { label: threat.severity, themeKey: 'amber' };
             const isSelected = selected?.id === threat.id;
 
             return (
@@ -56,28 +57,27 @@ export default function ThreatList({ threats = [], selected, onSelect, title = "
                 }`}
               >
                 <div className="flex items-start gap-2.5">
-                  {/* Category color indicator */}
                   <span
                     className="w-2 h-2 rounded-full shrink-0 mt-1.5"
-                    style={{ backgroundColor: sev.color }}
+                    style={{ backgroundColor: themeColor(sev.themeKey) }}
                   />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                       <span
                         className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider"
-                        style={{ backgroundColor: sev.bg || 'rgba(217,155,83,0.15)', color: sev.color }}
+                        style={{ backgroundColor: themeColor(sev.themeKey, 0.15), color: themeColor(sev.themeKey) }}
                       >
                         {sev.label}
                       </span>
                       <span className="text-[11px] text-text-muted">{cat.label}</span>
 
                       {threat.isReal ? (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-accent/15 text-accent font-mono ml-auto font-medium">
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-accent/15 text-accent font-mono ml-auto font-medium">
                           CISA
                         </span>
                       ) : (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber/15 text-amber font-mono ml-auto font-medium">
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber/15 text-amber font-mono ml-auto font-medium">
                           SIMULÉ
                         </span>
                       )}

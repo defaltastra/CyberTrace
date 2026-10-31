@@ -1,183 +1,90 @@
-<div align="center">
+# CyberTrace
 
-# 🛡️ CyberTrace
+Interactive cyber-threat intelligence dashboard: explore CISA's Known Exploited Vulnerabilities catalog on a world map, in charts, and through a searchable incident explorer — all in a French SOC-style UI.
 
-### *Real-Time Cyber Threat Intelligence & Global SOC Analytics Platform*
+![CyberTrace executive dashboard](docs/screenshots/dashboard.png)
 
-[![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Leaflet](https://img.shields.io/badge/Leaflet-1.9.4-199900?style=for-the-badge&logo=leaflet&logoColor=white)](https://leafletjs.com/)
-[![Recharts](https://img.shields.io/badge/Recharts-2.13-22B5BF?style=for-the-badge)](https://recharts.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](#license)
+## What it does
 
-<p align="center">
-  <b>CyberTrace</b> is an interactive, modern <b>Cyber Threat Intelligence (CTI)</b> and <b>Security Operations Center (SOC)</b> dashboard designed to visualize, filter, and analyze real-world vulnerabilities, active exploits, and global cyber incidents in real time.
-</p>
+- **Dashboard** — KPI banner, 12-month attack trend, severity and category charts, top targeted vendors, recent incidents.
+- **World map** — Leaflet map with severity-coloured threat markers, region filters and per-incident detail popups.
+- **Threat explorer** — multi-criteria search (CVE, vendor, product, country, severity, category) with pagination and CSV/JSON export.
+- **Live feed** — chronological incident stream with manual/automatic refresh against the CISA KEV catalog.
+- **Settings** — three visual themes (Toxic Earth default, Void, Gruvbox Cyber) and configurable refresh interval.
+- **Resilient data loading** — dev proxy → direct CISA fetch → bundled snapshot fallback.
 
-[Key Features](#-key-features) •
-[Architecture](#-architecture--views) •
-[Data Sources](#-threat-intelligence-sources) •
-[Getting Started](#-getting-started) •
-[Authors](#-creators--contributors)
+## Screenshots
 
----
+| World map | Threat explorer |
+| --- | --- |
+| ![World map](docs/screenshots/map.png) | ![Threat explorer](docs/screenshots/explorer.png) |
 
-</div>
+Full-size images live in [`docs/screenshots/`](docs/screenshots/).
 
-## 📌 Overview
+## Stack
 
-In the modern threat landscape, security analysts and SOC teams face an overwhelming deluge of indicators of compromise (IOCs), vulnerability catalogs, and threat actor campaigns. **CyberTrace** aggregates and presents complex cybersecurity intelligence into actionable, intuitive visualizations:
+| Layer | Technology |
+| --- | --- |
+| UI | React 18, React Router 6 |
+| Build | Vite 6 |
+| Styling | Tailwind CSS 3 with CSS-variable theme tokens |
+| Charts | Recharts 2 |
+| Map | Leaflet 1.9 + React-Leaflet 4 |
+| Icons | lucide-react |
+| Tests | Vitest |
 
-- **Geospatial Threat Mapping**: Pinpoint affected regions, origin vectors, and critical assets across an interactive world map.
-- **Dynamic Threat Explorer**: Deep-dive into active exploits, CVE details, CVSS scores, remediation tactics, and MITRE ATT&CK vectors.
-- **Analytics & Metrics**: Statistical breakdown of attack vectors, severity distributions, affected sectors, and timeline trends.
-- **Live Feed & Real-Time Monitoring**: Streaming incident updates and real-time operational feeds for security analysts.
+## Quickstart
 
----
+Requires Node.js 22.12+ (Vitest 5 requirement) and npm.
 
-## ✨ Key Features
+```bash
+npm install      # install dependencies
+npm run dev      # dev server at http://localhost:5173
+npm run build    # production bundle in dist/
+npm run preview  # serve the production build locally
+npm test         # run the Vitest suite
+```
 
-- 🗺️ **Interactive Global Map**
-  - Built with Leaflet & React-Leaflet with custom dark cyber themes.
-  - Geo-located threat markers with color-coded severity rings (Critical, High, Medium, Low).
-  - Detailed popup modals with threat profiles and direct action links.
+During `npm run dev`, Vite proxies `/api/cisa` to the official CISA KEV feed, so the app shows live catalog data. This proxy exists only in the dev server.
 
-- 📊 **Security Operations Analytics**
-  - Interactive charts powered by Recharts (radial charts, bar distributions, severity heatmaps).
-  - Categorization across Ransomware, APT campaigns, Zero-Days, Phishing, Supply Chain, and DDoS.
+## Deployment
 
-- 🔍 **Advanced Filtering & Search**
-  - Search across CVEs, malware families, threat actors, and impacted industries.
-  - Multi-criteria filtering by Severity, Category, Protocol, and Country.
+The app is a client-side SPA, so every route must fall back to `index.html`:
 
-- ⚡ **Live Feed & Incident Explorer**
-  - Chronological incident tracking with severity tags.
-  - Deep inspection modal detailing impact analysis, IOCs, and remediation steps.
+- **Netlify / Cloudflare Pages** — `public/_redirects` already contains `/*    /index.html   200`.
+- **Vercel** — add a rewrite from `/(.*)` to `/index.html` in the project settings.
 
-- 🎨 **Sleek Cyber/SOC Dark UI**
-  - Custom Tailwind CSS styling tailored for operations centers and ambient monitors.
-  - High-contrast visual cues, neon accents, and responsive layout across all resolutions.
+No environment variables are required. Build with `npm run build` and publish `dist/`.
 
----
+In production there is no Vite proxy. The app tries the official CISA URL directly; if that request is blocked by CORS or the network, it serves the bundled snapshot at `public/data/cisa_kev_snapshot.json` (catalog `2026.10.23`, released 2026-10-23, 140 entries). Replace that file to ship a newer snapshot.
 
-## 🏛️ Architecture & Views
+## Data provenance
+
+- **Real data** — vulnerabilities, vendors, products, CVE IDs, descriptions, due dates and remediation actions come from the public **CISA Known Exploited Vulnerabilities (KEV)** catalog (US Government work, public domain). Markers are placed at approximate vendor headquarters/infrastructure locations, not at confirmed attack origins.
+- **Simulated data** — additional ransomware, phishing, APT, DDoS and malware incidents (`src/data/threats.js`) are clearly labelled **Simulated Threat Telemetry** in the UI and in exports. They exist to demonstrate category, geography and severity variety; they are not real incidents.
+- The UI exposes a source filter so real and simulated records can be viewed separately. Severity for KEV entries is derived heuristically from the catalog text and dates, not from an official CVSS score.
+
+## Project structure
 
 ```
 CyberTrace/
-├── 📁 public/                 # Static assets, icons, and portraits
-├── 📁 src/
-│   ├── 📁 components/         # Reusable UI widgets & charts
-│   │   ├── ThreatMap.jsx      # Leaflet geospatial visualization
-│   │   ├── Charts.jsx         # Recharts analytics widgets
-│   │   ├── ThreatList.jsx     # Incident list view with pagination & sort
-│   │   ├── ThreatDetail.jsx   # Modal view for granular threat intelligence
-│   │   ├── StatsBar.jsx       # Quick KPI banner (Active threats, Critical count, etc.)
-│   │   ├── Filters.jsx        # Multi-attribute filter drawer
-│   │   ├── Navbar.jsx         # Header navigation bar
-│   │   └── AboutSection.jsx   # Project & author information
-│   ├── 📁 views/              # Route-level views
-│   │   ├── DashboardView.jsx        # Unified SOC overview
-│   │   ├── GlobalMapView.jsx        # Fullscreen interactive map
-│   │   ├── ThreatExplorerView.jsx   # Searchable catalog of threats & CVEs
-│   │   ├── AnalyticsView.jsx        # Deep analytical graphs & sector breakdown
-│   │   ├── LiveFeedView.jsx         # Live telemetry & incident events
-│   │   ├── SettingsView.jsx         # API keys & integration settings
-│   │   └── AboutView.jsx            # Creators, documentation, and source credits
-│   ├── 📁 services/           # Threat intelligence data services
-│   ├── 📁 data/               # Preloaded CTI telemetry and datasets
-│   ├── 📁 utils/              # Helper utilities & theme configs
-│   ├── App.jsx                # Core router & layout shell
-│   └── main.jsx               # Application entrypoint
-├── index.html
-├── tailwind.config.js
-└── vite.config.js
+├── public/
+│   ├── data/cisa_kev_snapshot.json   # bundled CISA KEV fallback
+│   └── _redirects                    # SPA rewrite for Netlify-compatible hosts
+├── src/
+│   ├── components/                   # Header, Navbar, Filters, charts, map, lists, modal
+│   ├── views/                        # Dashboard, Map, Explorer, LiveFeed, Settings
+│   ├── services/threatService.js     # fetch CISA KEV, map records, export helpers
+│   ├── data/threats.js               # simulated telemetry dataset
+│   ├── utils/                        # theme tokens and helpers
+│   ├── App.jsx                       # router, data loading, shared state
+│   └── main.jsx
+├── docs/screenshots/                 # README screenshots
+└── vite.config.js                    # dev proxy for the CISA feed
 ```
 
----
+## Credits
 
-## 🌐 Threat Intelligence Sources
+Built by **Oussama El Harti** ([LinkedIn](https://www.linkedin.com/in/oussama-el-harti-b65682249/)) and **Ilham Didih** ([LinkedIn](https://www.linkedin.com/in/ilham-didih-30a809354/)).
 
-CyberTrace integrates and references data structures compatible with top open-source threat intelligence feeds:
-
-| Provider | Type | Description |
-|---|---|---|
-| **CISA KEV** | Official US Gov Feed | Known Exploited Vulnerabilities Catalog listing actively targeted zero-days & flaws. |
-| **NIST NVD** | Public REST API | National Vulnerability Database containing official CVSS ratings and CVE references. |
-| **AlienVault OTX** | Collaborative CTI | Crowd-sourced open threat exchange for pulses, malware signatures, and IOCs. |
-| **abuse.ch** | Malware / IOC Feed | Real-time threat feeds from URLhaus, ThreatFox, and MalwareBazaar. |
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (v18.0.0 or higher recommended)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-
-### Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/your-username/CyberTrace.git
-   cd CyberTrace
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
-
-4. **Open in browser:**
-   Navigate to `http://localhost:5173` to launch the platform.
-
-### Build for Production
-
-To generate an optimized production bundle:
-```bash
-npm run build
-```
-
-To preview the production build locally:
-```bash
-npm run preview
-```
-
----
-
-## 👥 Creators & Contributors
-
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://www.linkedin.com/in/oussama-el-harti-b65682249/">
-        <b>Oussama El Harti</b>
-      </a>
-      <br />
-      <sub>Developer & Security Researcher</sub>
-      <br />
-      <sub>Cyber Threat Intelligence (CTI) • React & Vite • Data Visualization</sub>
-    </td>
-    <td align="center">
-      <a href="https://www.linkedin.com/in/ilham-didih-30a809354/">
-        <b>Ilham Didih</b>
-      </a>
-      <br />
-      <sub>SOC Analyst L1/L2</sub>
-      <br />
-      <sub>Threat Detection • Incident Response • SIEM • EDR / NDR</sub>
-    </td>
-  </tr>
-</table>
-
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE). Feel free to use, modify, and distribute it for personal, educational, or commercial projects.
+Threat data courtesy of the [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog). Map tiles © OpenStreetMap contributors.

@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -19,14 +18,6 @@
   }
 
   [data-theme="void"] {
-    /* Void Theme:
-       Void: #100D1C (16, 13, 28)
-       Surface: #251C38 (37, 28, 56)
-       Signal: #70F0D0 (112, 240, 208)
-       Accent: #B49AFF (180, 154, 255)
-       Critical: #FF6B8A (255, 107, 138)
-       Text: #EDE9FE (237, 233, 254)
-    */
     --color-bg-rgb: 16, 13, 28;
     --color-panel-rgb: 37, 28, 56;
     --color-panel-light-rgb: 50, 37, 76;
@@ -40,14 +31,6 @@
   }
 
   [data-theme="gruvbox"] {
-    /* Gruvbox Cyber:
-       Bg: #1d2021 (29, 32, 33)
-       Surface: #282828 (40, 40, 40)
-       Accent: #b8bb26 (184, 187, 38)
-       Signal: #fabd2f (250, 189, 47)
-       Critical: #fb4934 (251, 73, 52)
-       Text: #ebdbb2 (235, 219, 178)
-    */
     --color-bg-rgb: 29, 32, 33;
     --color-panel-rgb: 40, 40, 40;
     --color-panel-light-rgb: 60, 56, 54;
@@ -70,6 +53,13 @@
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    min-height: 100dvh;
+  }
+  html {
+    color-scheme: dark;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
   }
   ::-webkit-scrollbar {
     width: 6px;
@@ -98,16 +88,8 @@
     border: 1px solid rgb(var(--color-border-subtle-rgb));
     border-radius: 0.5rem;
   }
-  .badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
-  }
   .btn {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer;
-  }
-  .btn-primary {
-    background-color: rgb(var(--color-accent-rgb));
-    color: rgb(var(--color-bg-rgb));
-    @apply btn hover:opacity-90 active:scale-95;
   }
   .input {
     background-color: rgb(var(--color-panel-light-rgb));
@@ -169,4 +151,69 @@
 }
 .threat-marker-popup .leaflet-popup-close-button {
   color: rgb(var(--color-text-muted-rgb)) !important;
+}
+
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ---- Accessibility layer ---- */
+:focus-visible {
+  outline: 2px solid rgb(var(--color-accent-rgb));
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Mobile / touch layer ---- */
+/* Tappable controls: no 300ms double-tap wait, no long-press text selection. */
+button,
+a,
+[role="button"],
+.btn,
+.select {
+  touch-action: manipulation;
+}
+button,
+[role="button"],
+.btn,
+nav a {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* iOS zooms the page when an input under 16px gets focus. Fix the cause, not the zoom. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+    line-height: 1.25;
+  }
+}
+
+/* Safe areas (viewport-fit=cover is set in index.html). Unlayered so they beat py-* utilities. */
+.app-header {
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+}
+.app-footer {
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+}
+.modal-safe {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
 }

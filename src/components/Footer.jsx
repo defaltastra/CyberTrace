@@ -1,8 +1,8 @@
-import { Shield, Linkedin, ExternalLink } from 'lucide-react';
+import { Shield, ExternalLink } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-border-subtle bg-bg/90 backdrop-blur-sm px-6 py-5 mt-auto">
+    <footer className="app-footer border-t border-border-subtle bg-bg/90 backdrop-blur-sm px-6 pt-5 mt-auto">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-muted">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-accent" />
@@ -12,7 +12,6 @@ export default function Footer() {
           <span className="text-text-muted/60">| Carte mondiale interactive des cybermenaces</span>
         </div>
 
-        {/* Mandatory credit string */}
         <div className="text-center sm:text-right">
           <p className="font-medium text-text">
             CyberTrace — Made by{' '}

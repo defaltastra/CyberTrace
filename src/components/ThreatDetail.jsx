@@ -13,38 +13,22 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { THREAT_CATEGORIES, SEVERITY_LEVELS } from '../data/threats';
+import { themeColor } from '../utils/theme';
+import { formatDateTime } from '../utils/format';
 
-function formatDate(ts) {
-  if (!ts) return 'N/A';
-  return new Date(ts).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-export default function ThreatDetail({ threat, onClose, isModal = false }) {
-  // Close modal on Escape key
+export default function ThreatDetail({ threat, onClose }) {
   useEffect(() => {
-    if (!isModal) return;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && onClose) {
-        onClose();
-      }
+      if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModal, onClose]);
-
-  if (!threat) return null;
+  }, [onClose]);
 
   const cat = THREAT_CATEGORIES[threat.type] || { label: threat.type, color: '#48D597' };
   const sev = SEVERITY_LEVELS[threat.severity] || {
     label: threat.severity,
-    color: '#D99B53',
-    bg: 'rgba(217,155,83,0.15)',
+    themeKey: 'amber',
   };
 
   const isCve = threat.id?.startsWith('CVE-');
@@ -52,14 +36,14 @@ export default function ThreatDetail({ threat, onClose, isModal = false }) {
   const cisaUrl = threat.isReal ? 'https://www.cisa.gov/known-exploited-vulnerabilities-catalog' : null;
 
   const content = (
-    <div className="panel h-full overflow-y-auto flex flex-col border border-border-subtle bg-panel shadow-2xl">
+    <div className="panel h-full overflow-y-auto overscroll-contain flex flex-col border border-border-subtle bg-panel shadow-2xl">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-border-subtle flex items-start justify-between gap-3 shrink-0 bg-panel-light/40 sticky top-0 z-20 backdrop-blur-md">
+      <div className="px-5 py-4 border-b border-border-subtle flex items-start justify-between gap-3 shrink-0 bg-panel-light sticky top-0 z-20">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span
               className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider"
-              style={{ backgroundColor: sev.bg, color: sev.color }}
+              style={{ backgroundColor: themeColor(sev.themeKey, 0.15), color: themeColor(sev.themeKey) }}
             >
               {sev.label}
             </span>
@@ -83,16 +67,14 @@ export default function ThreatDetail({ threat, onClose, isModal = false }) {
           <h2 className="text-base sm:text-lg font-bold text-text leading-snug">{threat.title}</h2>
         </div>
 
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-xl bg-panel-light hover:bg-accent/20 text-text-muted hover:text-text transition-colors shrink-0 cursor-pointer"
-            title="Fermer la fiche détaillée (Échap)"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-2 rounded-xl bg-panel-light hover:bg-accent/20 text-text-muted hover:text-text transition-colors shrink-0 cursor-pointer"
+          title="Fermer la fiche détaillée (Échap)"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Body */}
@@ -124,18 +106,18 @@ export default function ThreatDetail({ threat, onClose, isModal = false }) {
             <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1">
               <Clock className="w-3.5 h-3.5 text-amber" /> Date de Détection
             </div>
-            <p className="text-xs sm:text-sm font-semibold text-text">{formatDate(threat.timestamp)}</p>
+            <p className="text-xs sm:text-sm font-semibold text-text">{formatDateTime(threat.timestamp)}</p>
             <p className="text-[11px] font-mono text-text-muted">Horodatage vérifié</p>
           </div>
         </div>
 
         {/* CISA Remediation & Due Date */}
         {(threat.requiredAction || threat.dueDate) && (
-          <div className="panel-light p-3.5 border border-red-500/30 bg-red-950/20">
+          <div className="panel-light p-3.5 border border-critical/30 bg-critical/10">
             <div className="flex items-start gap-2.5">
-              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <AlertTriangle className="w-4 h-4 text-critical shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <div className="text-xs font-bold text-red-300">Action Corrective Mandatée (CISA)</div>
+                <div className="text-xs font-bold text-critical">Action Corrective Mandatée (CISA)</div>
                 {threat.requiredAction && (
                   <p className="text-xs text-text-muted leading-relaxed">{threat.requiredAction}</p>
                 )}
@@ -238,27 +220,20 @@ export default function ThreatDetail({ threat, onClose, isModal = false }) {
     </div>
   );
 
-  // When rendered as a modal, render via createPortal into document.body with max z-index
-  if (isModal) {
-    return createPortal(
+  return createPortal(
+    <div
+      className="modal-safe fixed inset-0 z-[999999] flex items-center justify-center px-4 sm:px-6 bg-black/80 backdrop-blur-md animate-fade-in"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
-        className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in"
-        onClick={(e) => {
-          if (e.target === e.currentTarget && onClose) {
-            onClose();
-          }
-        }}
+        className="relative w-full max-w-2xl max-h-[90dvh] h-[700px] flex flex-col rounded-2xl overflow-hidden shadow-2xl border border-border-subtle"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div
-          className="relative w-full max-w-2xl max-h-[90vh] h-[700px] flex flex-col rounded-2xl overflow-hidden shadow-2xl border border-border-subtle"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {content}
-        </div>
-      </div>,
-      document.body
-    );
-  }
-
-  return content;
+        {content}
+      </div>
+    </div>,
+    document.body
+  );
 }
