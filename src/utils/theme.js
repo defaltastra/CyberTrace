@@ -17,18 +17,6 @@ export const THEMES_CONFIG = {
       textMuted: '#9B9A8F',
       borderSubtle: '#2A3F36',
     },
-    rgb: {
-      bg: '10, 21, 18',
-      panel: '25, 53, 43',
-      panelLight: '31, 63, 52',
-      accent: '72, 213, 151',
-      accentDim: '42, 122, 88',
-      amber: '217, 155, 83',
-      critical: '224, 92, 92',
-      text: '231, 229, 217',
-      textMuted: '155, 154, 143',
-      borderSubtle: '42, 63, 54',
-    },
   },
   'void': {
     id: 'void',
@@ -45,18 +33,6 @@ export const THEMES_CONFIG = {
       text: '#EDE9FE',
       textMuted: '#A79BBF',
       borderSubtle: '#3D2D5E',
-    },
-    rgb: {
-      bg: '16, 13, 28',
-      panel: '37, 28, 56',
-      panelLight: '50, 37, 76',
-      accent: '180, 154, 255',
-      accentDim: '132, 101, 212',
-      amber: '112, 240, 208',
-      critical: '255, 107, 138',
-      text: '237, 233, 254',
-      textMuted: '167, 155, 191',
-      borderSubtle: '61, 45, 94',
     },
   },
   'gruvbox': {
@@ -75,18 +51,6 @@ export const THEMES_CONFIG = {
       textMuted: '#a89984',
       borderSubtle: '#504945',
     },
-    rgb: {
-      bg: '29, 32, 33',
-      panel: '40, 40, 40',
-      panelLight: '60, 56, 54',
-      accent: '184, 187, 38',
-      accentDim: '121, 116, 14',
-      amber: '250, 189, 47',
-      critical: '251, 73, 52',
-      text: '235, 219, 178',
-      textMuted: '168, 153, 132',
-      borderSubtle: '80, 73, 69',
-    },
   },
 };
 
@@ -94,25 +58,32 @@ export function applyTheme(themeId) {
   const selectedTheme = THEMES_CONFIG[themeId] || THEMES_CONFIG['toxic-earth'];
 
   document.documentElement.setAttribute('data-theme', selectedTheme.id);
-  document.body.setAttribute('data-theme', selectedTheme.id);
 
-  const root = document.documentElement;
-  // Apply comma-separated RGB variables for Tailwind opacity function
-  root.style.setProperty('--color-bg-rgb', selectedTheme.rgb.bg);
-  root.style.setProperty('--color-panel-rgb', selectedTheme.rgb.panel);
-  root.style.setProperty('--color-panel-light-rgb', selectedTheme.rgb.panelLight);
-  root.style.setProperty('--color-accent-rgb', selectedTheme.rgb.accent);
-  root.style.setProperty('--color-accent-dim-rgb', selectedTheme.rgb.accentDim);
-  root.style.setProperty('--color-amber-rgb', selectedTheme.rgb.amber);
-  root.style.setProperty('--color-critical-rgb', selectedTheme.rgb.critical);
-  root.style.setProperty('--color-text-rgb', selectedTheme.rgb.text);
-  root.style.setProperty('--color-text-muted-rgb', selectedTheme.rgb.textMuted);
-  root.style.setProperty('--color-border-subtle-rgb', selectedTheme.rgb.borderSubtle);
-
-  // Directly set body background and color inline as well for immediate 100% guarantee
-  document.body.style.backgroundColor = selectedTheme.colors.bg;
-  document.body.style.color = selectedTheme.colors.text;
+  // Keep the mobile status bar / browser chrome in sync with the active theme
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.setAttribute('content', selectedTheme.colors.bg);
 
   localStorage.setItem('cybertrace_theme', selectedTheme.id);
-  return selectedTheme;
+}
+
+const THEME_COLOR_VARS = {
+  critical: '--color-critical-rgb',
+  amber: '--color-amber-rgb',
+  accentDim: '--color-accent-dim-rgb',
+  accent: '--color-accent-rgb',
+};
+
+export function themeColor(themeKey, alpha) {
+  const varName = THEME_COLOR_VARS[themeKey];
+  return alpha == null
+    ? `rgb(var(${varName}))`
+    : `rgba(var(${varName}), ${alpha})`;
+}
+
+export function resolveThemeColor(themeKey) {
+  const varName = THEME_COLOR_VARS[themeKey];
+  const rgb = getComputedStyle(document.documentElement)
+    .getPropertyValue(varName)
+    .trim();
+  return rgb ? `rgb(${rgb})` : '';
 }

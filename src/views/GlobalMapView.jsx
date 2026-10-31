@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import ThreatMap from '../components/ThreatMap';
 import Filters from '../components/Filters';
-import { Globe, MapPin, Compass } from 'lucide-react';
+import { Globe } from 'lucide-react';
 
 export default function GlobalMapView({
   threats = [],
@@ -11,7 +11,6 @@ export default function GlobalMapView({
   selectedThreat,
   onSelectThreat,
 }) {
-  // Extract unique countries with their threat counts
   const countryDistribution = useMemo(() => {
     const counts = {};
     threats.forEach((t) => {
@@ -39,7 +38,7 @@ export default function GlobalMapView({
         </div>
 
         {/* Quick Country Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar py-1 sm:flex-wrap sm:overflow-visible">
           <span className="text-[11px] font-mono text-text-muted mr-1 shrink-0">Top Régions :</span>
           {countryDistribution.map(([country, count]) => (
             <button
@@ -69,13 +68,12 @@ export default function GlobalMapView({
       {/* Dedicated Full-Width Map */}
       <div
         className="w-full rounded-xl overflow-hidden shadow-2xl border border-border-subtle"
-        style={{ height: 'clamp(600px, 76vh, 900px)' }}
+        style={{ height: 'clamp(420px, 70dvh, 900px)' }}
       >
         <ThreatMap
           threats={filteredThreats}
           onInspect={onSelectThreat}
           selected={selectedThreat}
-          height="100%"
         />
       </div>
 
@@ -83,7 +81,7 @@ export default function GlobalMapView({
       <div className="panel p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs border border-border-subtle bg-panel">
         <div className="flex items-center gap-4 text-text-muted font-mono">
           <span>Menaces visibles : <strong className="text-accent">{filteredThreats.length}</strong></span>
-          <span>Critiques : <strong className="text-red-400">{filteredThreats.filter((t) => t.severity === 'critical').length}</strong></span>
+          <span>Critiques : <strong className="text-critical">{filteredThreats.filter((t) => t.severity === 'critical').length}</strong></span>
           <span>Pays actifs : <strong className="text-amber">{[...new Set(filteredThreats.map((t) => t.country).filter(Boolean))].length}</strong></span>
         </div>
 

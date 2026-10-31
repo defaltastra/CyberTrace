@@ -1,27 +1,30 @@
 import { useState, useMemo } from 'react';
 import Filters from '../components/Filters';
-import ThreatDetail from '../components/ThreatDetail';
 import { exportToCSV, exportToJSON } from '../services/threatService';
 import { THREAT_CATEGORIES, SEVERITY_LEVELS } from '../data/threats';
+import { themeColor } from '../utils/theme';
+import { formatDate } from '../utils/format';
 import {
   Search,
-  Download,
-  Filter,
   ArrowUpDown,
-  ExternalLink,
   MapPin,
-  Calendar,
-  ShieldAlert,
   FileSpreadsheet,
   FileCode,
 } from 'lucide-react';
 
+const COLUMNS = [
+  { key: 'id', label: 'Identifiant / CVE', padding: 'px-4' },
+  { key: 'type', label: 'Catégorie', padding: 'px-3' },
+  { key: 'severity', label: 'Gravité', padding: 'px-3' },
+  { key: 'title', label: 'Désignation / Cible', padding: 'px-4' },
+  { key: 'country', label: 'Localisation', padding: 'px-3' },
+  { key: 'timestamp', label: 'Date', padding: 'px-3' },
+];
+
 export default function ThreatExplorerView({
-  threats = [],
   filteredThreats = [],
   filters,
   onFiltersChange,
-  selectedThreat,
   onSelectThreat,
 }) {
   const [sortField, setSortField] = useState('timestamp');
@@ -29,7 +32,6 @@ export default function ThreatExplorerView({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  // Sorting logic
   const sortedThreats = useMemo(() => {
     return [...filteredThreats].sort((a, b) => {
       let valA = a[sortField];
@@ -139,74 +141,32 @@ export default function ThreatExplorerView({
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-border-subtle bg-bg/40 font-mono text-text-muted">
-                <th
-                  onClick={() => toggleSort('id')}
-                  className="py-3 px-4 font-semibold cursor-pointer hover:text-accent"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Identifiant / CVE</span>
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => toggleSort('type')}
-                  className="py-3 px-3 font-semibold cursor-pointer hover:text-accent"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Catégorie</span>
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => toggleSort('severity')}
-                  className="py-3 px-3 font-semibold cursor-pointer hover:text-accent"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Gravité</span>
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => toggleSort('title')}
-                  className="py-3 px-4 font-semibold cursor-pointer hover:text-accent"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Désignation / Cible</span>
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => toggleSort('country')}
-                  className="py-3 px-3 font-semibold cursor-pointer hover:text-accent"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Localisation</span>
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => toggleSort('timestamp')}
-                  className="py-3 px-3 font-semibold cursor-pointer hover:text-accent"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Date</span>
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
+                {COLUMNS.map(({ key, label, padding }) => (
+                  <th
+                    key={key}
+                    onClick={() => toggleSort(key)}
+                    className={`py-3 ${padding} font-semibold cursor-pointer hover:text-accent`}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>{label}</span>
+                      <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </th>
+                ))}
                 <th className="py-3 px-3 font-semibold text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle/50">
               {paginatedThreats.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-text-muted">
+                  <td colSpan={COLUMNS.length + 1} className="py-12 text-center text-text-muted">
                     Aucune menace ne correspond aux filtres actifs.
                   </td>
                 </tr>
               ) : (
                 paginatedThreats.map((threat) => {
                   const cat = THREAT_CATEGORIES[threat.type] || { label: threat.type, color: '#48D597' };
-                  const sev = SEVERITY_LEVELS[threat.severity] || { label: threat.severity, color: '#D99B53' };
+                  const sev = SEVERITY_LEVELS[threat.severity] || { label: threat.severity, themeKey: 'amber' };
 
                   return (
                     <tr
@@ -218,7 +178,7 @@ export default function ThreatExplorerView({
                         <div className="flex items-center gap-1.5">
                           <span>{threat.id}</span>
                           {threat.isReal && (
-                            <span className="text-[9px] px-1 py-0.2 rounded bg-accent/20 text-accent">
+                            <span className="text-[9px] px-1 py-0.5 rounded bg-accent/20 text-accent">
                               LIVE
                             </span>
                           )}
@@ -235,7 +195,7 @@ export default function ThreatExplorerView({
                       <td className="py-3 px-3 whitespace-nowrap">
                         <span
                           className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
-                          style={{ backgroundColor: sev.bg || 'rgba(217,155,83,0.15)', color: sev.color }}
+                          style={{ backgroundColor: themeColor(sev.themeKey, 0.15), color: themeColor(sev.themeKey) }}
                         >
                           {sev.label}
                         </span>
@@ -255,11 +215,7 @@ export default function ThreatExplorerView({
                         </div>
                       </td>
                       <td className="py-3 px-3 font-mono text-[11px] text-text-muted whitespace-nowrap">
-                        {new Date(threat.timestamp).toLocaleDateString('fr-FR', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
+                        {formatDate(threat.timestamp)}
                       </td>
                       <td className="py-3 px-3 text-right whitespace-nowrap">
                         <button

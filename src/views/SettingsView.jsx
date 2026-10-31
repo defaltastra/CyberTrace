@@ -1,57 +1,19 @@
-import { useState } from 'react';
 import {
   Settings as SettingsIcon,
   Palette,
-  RefreshCw,
-  Sliders,
   Check,
-  Shield,
   Clock,
-  Sparkles,
-  Key,
-  Database,
   RotateCcw,
 } from 'lucide-react';
+import { THEMES_CONFIG } from '../utils/theme';
 
-export const THEMES = [
-  {
-    id: 'toxic-earth',
-    name: 'Toxic Earth (Original)',
-    subtitle: 'Centre de surveillance SOC & nature sombre',
-    colors: [
-      { name: 'Fond', hex: '#0A1512' },
-      { name: 'Panneau', hex: '#19352B' },
-      { name: 'Accent', hex: '#48D597' },
-      { name: 'Alerte', hex: '#D99B53' },
-    ],
-  },
-  {
-    id: 'void',
-    name: 'Void',
-    subtitle: 'Néon violet cosmique & cyan tranchant',
-    colors: [
-      { name: 'Void', hex: '#100D1C' },
-      { name: 'Surface', hex: '#251C38' },
-      { name: 'Signal', hex: '#70F0D0' },
-      { name: 'Accent', hex: '#B49AFF' },
-      { name: 'Critique', hex: '#FF6B8A' },
-    ],
-  },
-  {
-    id: 'gruvbox',
-    name: 'Gruvbox Cyber',
-    subtitle: 'Esthétique hacker rétro chaleureuse',
-    colors: [
-      { name: 'Bg', hex: '#1d2021' },
-      { name: 'Surface', hex: '#282828' },
-      { name: 'Accent', hex: '#b8bb26' },
-      { name: 'Signal', hex: '#fabd2f' },
-      { name: 'Critique', hex: '#fb4934' },
-    ],
-  },
-];
+const SWATCH_KEYS = ['bg', 'panel', 'accent', 'amber', 'critical'];
+const THEMES = Object.values(THEMES_CONFIG).map((t) => ({
+  ...t,
+  colors: SWATCH_KEYS.map((k) => ({ name: k, hex: t.colors[k] })),
+}));
 
-export const REFRESH_RATES = [
+const REFRESH_RATES = [
   { value: 15, label: '15 secondes (Haute fréquence)' },
   { value: 30, label: '30 secondes (Recommandé)' },
   { value: 60, label: '60 secondes (Standard)' },
@@ -66,15 +28,6 @@ export default function SettingsView({
   onRefreshIntervalChange,
   onResetSettings,
 }) {
-  const [apiKey, setApiKey] = useState(localStorage.getItem('cybertrace_otx_key') || '');
-  const [keySaved, setKeySaved] = useState(false);
-
-  const handleSaveApiKey = () => {
-    localStorage.setItem('cybertrace_otx_key', apiKey);
-    setKeySaved(true);
-    setTimeout(() => setKeySaved(false), 2500);
-  };
-
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in py-2">
       {/* Header */}
@@ -187,38 +140,7 @@ export default function SettingsView({
         </div>
       </div>
 
-      {/* 3. External API Key Helper */}
-      <div className="panel p-6 border border-border-subtle bg-panel space-y-4 shadow-md">
-        <div className="flex items-center gap-2">
-          <Key className="w-5 h-5 text-accent" />
-          <h3 className="text-sm font-bold text-text uppercase tracking-wider font-mono">
-            Clés API Externes (Optionnel)
-          </h3>
-        </div>
-        <p className="text-xs text-text-muted leading-relaxed">
-          Pour les utilisateurs souhaitant enrichir CyberTrace avec leurs propres flux AlienVault OTX ou NVD.
-          Les clés sont stockées <strong className="text-text">exclusivement dans votre navigateur (localStorage)</strong> et
-          ne sont jamais transmises à des tiers.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-2 max-w-xl">
-          <input
-            type="password"
-            placeholder="Clé AlienVault OTX (optionnel)..."
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            className="input flex-1 text-xs font-mono h-9"
-          />
-          <button
-            onClick={handleSaveApiKey}
-            className="btn bg-accent text-bg hover:bg-accent/90 text-xs font-bold px-4 py-2 rounded-lg font-mono transition-colors shrink-0"
-          >
-            {keySaved ? 'Enregistrée !' : 'Enregistrer la clé'}
-          </button>
-        </div>
-      </div>
-
-      {/* 4. Reset Button */}
+      {/* 3. Reset Button */}
       <div className="flex justify-end pt-2">
         <button
           onClick={onResetSettings}

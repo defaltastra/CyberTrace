@@ -1,4 +1,4 @@
-import { Linkedin, Shield, ExternalLink, Database, Globe, Lock, Cpu, Server, CheckCircle2, AlertTriangle, Key } from 'lucide-react';
+import { Linkedin, Shield, ExternalLink, Database, Globe, Lock, Cpu, AlertTriangle, Key } from 'lucide-react';
 
 const creators = [
   {
@@ -14,16 +14,14 @@ const creators = [
     role: 'Analyste SOC L1/L2 | SIEM | EDR/NDR | Threat Detection & Incident Response',
     linkedin: 'https://www.linkedin.com/in/ilham-didih-30a809354/',
     image: '/ilham.jpg',
-  bio: 'Analyste SOC L1/L2 spécialisée dans la détection des menaces, la supervision de la sécurité et la réponse aux incidents. Intéressée par les solutions SIEM, EDR et NDR, l’analyse des événements de sécurité et le renforcement de la sécurité des systèmes d’information.',
-
-skills: ['Analyse SOC L1/L2', 'SIEM', 'EDR / NDR', 'Threat Detection', 'Incident Response', 'Analyse de Logs', 'Surveillance de Sécurité'],
+    bio: 'Analyste SOC L1/L2 spécialisée dans la détection des menaces, la supervision de la sécurité et la réponse aux incidents. Intéressée par les solutions SIEM, EDR et NDR, l’analyse des événements de sécurité et le renforcement de la sécurité des systèmes d’information.',
+    skills: ['Analyse SOC L1/L2', 'SIEM', 'EDR / NDR', 'Threat Detection', 'Incident Response', 'Analyse de Logs', 'Surveillance de Sécurité'],
   },
 ];
 
-export const PUBLIC_APIS = [
+const PUBLIC_APIS = [
   {
     name: 'CISA Known Exploited Vulnerabilities (KEV)',
-    type: 'Flux Public Officiel US Gov',
     status: 'Connecté en Direct',
     auth: 'Aucune clé requise',
     url: 'https://www.cisa.gov/known-exploited-vulnerabilities-catalog',
@@ -31,7 +29,6 @@ export const PUBLIC_APIS = [
   },
   {
     name: 'NIST NVD (National Vulnerability Database)',
-    type: 'API REST Publique',
     status: 'Compatible / Accessible',
     auth: 'Gratuit (clé recommandée pour haut débit)',
     url: 'https://nvd.nist.gov/developers/vulnerabilities',
@@ -39,7 +36,6 @@ export const PUBLIC_APIS = [
   },
   {
     name: 'AlienVault OTX (Open Threat Exchange)',
-    type: 'Renseignement Collaboratif (CTI)',
     status: 'Intégrable via Clé Utilisateur',
     auth: 'Clé API Gratuite sur compte AlienVault',
     url: 'https://otx.alienvault.com/',
@@ -47,7 +43,6 @@ export const PUBLIC_APIS = [
   },
   {
     name: 'abuse.ch (URLhaus & ThreatFox)',
-    type: 'Flux de Malwares & IOCs',
     status: 'Requiert Proxy Backend (CORS)',
     auth: 'Accès public communautaire',
     url: 'https://threatfox.abuse.ch/',
@@ -118,7 +113,8 @@ export default function AboutSection() {
 
               {/* Photo */}
               <div className="relative mb-4">
-<div className="w-36 h-36 rounded-full overflow-hidden border-2 border-accent/40">                  <img
+                <div className="w-36 h-36 rounded-full overflow-hidden border-2 border-accent/40">
+                  <img
                     src={creator.image}
                     alt={creator.name}
                     className="w-full h-full object-cover object-center"

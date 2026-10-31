@@ -1,7 +1,15 @@
-import { Search, Filter, X, SlidersHorizontal, Database } from 'lucide-react';
+import { Search, X, SlidersHorizontal } from 'lucide-react';
 import { THREAT_CATEGORIES, SEVERITY_LEVELS } from '../data/threats';
 
-export default function Filters({ filters, onFiltersChange, availableCountries = [] }) {
+export const DEFAULT_FILTERS = {
+  search: '',
+  type: '',
+  severity: '',
+  source: '',
+  country: '',
+};
+
+export default function Filters({ filters, onFiltersChange }) {
   const categories = [
     { value: '', label: 'Toutes les catégories' },
     ...Object.entries(THREAT_CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
@@ -21,13 +29,7 @@ export default function Filters({ filters, onFiltersChange, availableCountries =
   const hasActive = filters.search || filters.type || filters.severity || filters.source || filters.country;
 
   const clear = () => {
-    onFiltersChange({
-      search: '',
-      type: '',
-      severity: '',
-      source: '',
-      country: '',
-    });
+    onFiltersChange({ ...DEFAULT_FILTERS });
   };
 
   return (
@@ -58,54 +60,35 @@ export default function Filters({ filters, onFiltersChange, availableCountries =
             placeholder="Rechercher CVE, mot-clé, cible..."
             value={filters.search}
             onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
+            inputMode="search"
+            enterKeyHint="search"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
             className="input w-full pl-9 text-xs h-9"
           />
         </div>
 
-        {/* Category Select */}
-        <div>
-          <select
-            value={filters.type}
-            onChange={(e) => onFiltersChange({ ...filters, type: e.target.value })}
-            className="select w-full text-xs h-9"
-          >
-            {categories.map((c) => (
-              <option key={c.value} value={c.value} className="bg-panel text-text">
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Severity Select */}
-        <div>
-          <select
-            value={filters.severity}
-            onChange={(e) => onFiltersChange({ ...filters, severity: e.target.value })}
-            className="select w-full text-xs h-9"
-          >
-            {severities.map((s) => (
-              <option key={s.value} value={s.value} className="bg-panel text-text">
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Source Select */}
-        <div>
-          <select
-            value={filters.source || ''}
-            onChange={(e) => onFiltersChange({ ...filters, source: e.target.value })}
-            className="select w-full text-xs h-9"
-          >
-            {sources.map((src) => (
-              <option key={src.value} value={src.value} className="bg-panel text-text">
-                {src.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Category / Severity / Source Selects */}
+        {[
+          { key: 'type', options: categories },
+          { key: 'severity', options: severities },
+          { key: 'source', options: sources },
+        ].map(({ key, options }) => (
+          <div key={key}>
+            <select
+              value={filters[key]}
+              onChange={(e) => onFiltersChange({ ...filters, [key]: e.target.value })}
+              className="select w-full text-xs h-9"
+            >
+              {options.map((o) => (
+                <option key={o.value} value={o.value} className="bg-panel text-text">
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
       </div>
     </div>
   );

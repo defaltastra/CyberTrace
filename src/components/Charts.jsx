@@ -4,7 +4,7 @@ import {
 } from 'recharts';
 import { MONTHLY_TRENDS, THREAT_CATEGORIES, SEVERITY_LEVELS } from '../data/threats';
 import { THEMES_CONFIG } from '../utils/theme';
-import { BarChart3, PieChart as PieIcon, TrendingUp, ShieldAlert, Layers } from 'lucide-react';
+import { PieChart as PieIcon, TrendingUp, ShieldAlert, Layers } from 'lucide-react';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -23,10 +23,9 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export default function Charts({ threats = [], currentTheme = 'toxic-earth' }) {
+export default function Charts({ threats = [], currentTheme }) {
   const themeColors = THEMES_CONFIG[currentTheme]?.colors || THEMES_CONFIG['toxic-earth'].colors;
 
-  // 1. Dynamic category count from loaded threats
   const categoryCounts = threats.reduce((acc, t) => {
     acc[t.type] = (acc[t.type] || 0) + 1;
     return acc;
@@ -39,9 +38,8 @@ export default function Charts({ threats = [], currentTheme = 'toxic-earth' }) {
       value: count,
       color: cat.color,
     };
-  }).filter((d) => d.value > 0);
+  });
 
-  // 2. Top targeted vendors in real CISA KEV
   const vendorCounts = threats.reduce((acc, t) => {
     if (t.vendorProject) {
       acc[t.vendorProject] = (acc[t.vendorProject] || 0) + 1;
@@ -54,25 +52,23 @@ export default function Charts({ threats = [], currentTheme = 'toxic-earth' }) {
     .slice(0, 6)
     .map(([vendor, count]) => ({ vendor, count }));
 
-  // 3. Severity breakdown with theme-aware colors
-  const severityCounts = {
-    critical: threats.filter((t) => t.severity === 'critical').length,
-    high: threats.filter((t) => t.severity === 'high').length,
-    medium: threats.filter((t) => t.severity === 'medium').length,
-    low: threats.filter((t) => t.severity === 'low').length,
-  };
+  const severityCounts = threats.reduce(
+    (counts, t) => {
+      if (counts[t.severity] !== undefined) counts[t.severity] += 1;
+      return counts;
+    },
+    { critical: 0, high: 0, medium: 0, low: 0 }
+  );
 
-  const severityBarData = [
-    { name: 'Critique', count: severityCounts.critical, fill: themeColors.critical },
-    { name: 'Élevé', count: severityCounts.high, fill: themeColors.amber },
-    { name: 'Moyen', count: severityCounts.medium, fill: themeColors.accentDim },
-    { name: 'Faible', count: severityCounts.low, fill: themeColors.accent },
-  ];
+  const severityBarData = Object.entries(SEVERITY_LEVELS).map(([key, sev]) => ({
+    name: sev.label,
+    count: severityCounts[key],
+    fill: themeColors[sev.themeKey] || themeColors.accent,
+  }));
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* 1. Area Chart: Volume Trend (12 Months) */}
         <div className="panel p-5 lg:col-span-2 border border-border-subtle bg-panel shadow-md">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -115,7 +111,6 @@ export default function Charts({ threats = [], currentTheme = 'toxic-earth' }) {
           </ResponsiveContainer>
         </div>
 
-        {/* 2. Donut / Pie Chart: Category Distribution */}
         <div className="panel p-5 border border-border-subtle bg-panel shadow-md">
           <div className="mb-3">
             <h3 className="text-sm font-bold text-text flex items-center gap-2">
@@ -151,7 +146,6 @@ export default function Charts({ threats = [], currentTheme = 'toxic-earth' }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* 3. Bar Chart: Severity Breakdown */}
         <div className="panel p-5 border border-border-subtle bg-panel shadow-md">
           <div className="mb-4">
             <h3 className="text-sm font-bold text-text flex items-center gap-2">
@@ -176,7 +170,6 @@ export default function Charts({ threats = [], currentTheme = 'toxic-earth' }) {
           </ResponsiveContainer>
         </div>
 
-        {/* 4. Top Targeted Vendors in CISA KEV */}
         <div className="panel p-5 border border-border-subtle bg-panel shadow-md">
           <div className="mb-4">
             <h3 className="text-sm font-bold text-text flex items-center gap-2">

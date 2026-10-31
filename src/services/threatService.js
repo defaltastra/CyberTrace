@@ -2,7 +2,7 @@
 // Combines official US CISA Known Exploited Vulnerabilities (KEV) live data
 // with curated cybersecurity telemetry incidents.
 
-import { THREATS as DEMO_THREATS, THREAT_CATEGORIES, SEVERITY_LEVELS, MONTHLY_TRENDS } from '../data/threats';
+import { THREATS as DEMO_THREATS } from '../data/threats';
 
 const CISA_KEV_DEV_ENDPOINT = '/api/cisa';
 const CISA_KEV_OFFICIAL_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
@@ -94,21 +94,16 @@ function mapKevItem(vuln, index) {
     id: vuln.cveID || `KEV-${index}`,
     type: category,
     title: `${vuln.cveID}: ${vuln.vendorProject} ${vuln.product}`,
-    vulnerabilityName: vuln.vulnerabilityName,
     vendorProject: vuln.vendorProject,
-    product: vuln.product,
     description: vuln.shortDescription || 'No public description provided.',
-    severity: severity,
+    severity,
     country: geo.country,
-    countryCode: geo.country === 'United States' ? 'US' : geo.country === 'Germany' ? 'DE' : 'INTL',
     lat: Number(geo.lat.toFixed(4)),
     lng: Number(geo.lng.toFixed(4)),
     source: 'CISA Known Exploited Vulnerabilities Catalog',
-    sourceUrl: 'https://www.cisa.gov/known-exploited-vulnerabilities-catalog',
     timestamp: vuln.dateAdded ? new Date(vuln.dateAdded).toISOString() : new Date().toISOString(),
     dueDate: vuln.dueDate,
     requiredAction: vuln.requiredAction,
-    notes: vuln.notes,
     iocs: [vuln.cveID, `${vuln.vendorProject} ${vuln.product}`].filter(Boolean),
     affected: `${vuln.vendorProject} ${vuln.product} (${vuln.vulnerabilityName || 'Known Exploitation'})`,
     tags: [
@@ -124,23 +119,21 @@ function mapKevItem(vuln, index) {
 }
 
 let cachedThreats = null;
-let lastFetchTime = null;
 
-export async function fetchLiveThreats(options = { maxItems: 120 }) {
-  // Return cached if fresh (< 2 minutes)
-  if (cachedThreats && lastFetchTime && (Date.now() - lastFetchTime < 120000)) {
+const CACHE_TTL_MS = 120_000;
+
+export async function fetchLiveThreats({ maxItems = 120 } = {}) {
+  if (cachedThreats && Date.now() - Date.parse(cachedThreats.fetchedAt) < CACHE_TTL_MS) {
     return cachedThreats;
   }
 
   let rawKev = null;
-  let sourceOrigin = 'snapshot';
 
   // 1. Try local dev Vite proxy (/api/cisa)
   try {
     const res = await fetch(CISA_KEV_DEV_ENDPOINT, { cache: 'no-cache' });
     if (res.ok) {
       rawKev = await res.json();
-      sourceOrigin = 'cisa-live-proxy';
     }
   } catch (e) {
     // Vite proxy failed or in standalone mode
@@ -152,7 +145,6 @@ export async function fetchLiveThreats(options = { maxItems: 120 }) {
       const res = await fetch(CISA_KEV_OFFICIAL_URL, { cache: 'no-cache' });
       if (res.ok) {
         rawKev = await res.json();
-        sourceOrigin = 'cisa-live-direct';
       }
     } catch (e) {
       // Direct CORS blocked, fallback to local snapshot
@@ -165,7 +157,6 @@ export async function fetchLiveThreats(options = { maxItems: 120 }) {
       const res = await fetch(CISA_KEV_SNAPSHOT_URL);
       if (res.ok) {
         rawKev = await res.json();
-        sourceOrigin = 'cisa-snapshot';
       }
     } catch (e) {
       // Local snapshot failed
@@ -174,11 +165,10 @@ export async function fetchLiveThreats(options = { maxItems: 120 }) {
 
   let realList = [];
   if (rawKev && Array.isArray(rawKev.vulnerabilities)) {
-    // Sort by dateAdded descending (most recent first)
     const sorted = [...rawKev.vulnerabilities].sort(
       (a, b) => new Date(b.dateAdded || 0).getTime() - new Date(a.dateAdded || 0).getTime()
     );
-    realList = sorted.slice(0, options.maxItems || 120).map(mapKevItem);
+    realList = sorted.slice(0, maxItems).map(mapKevItem);
   }
 
   // Merge with simulated telemetry so user has rich geographic and incident variety (ransomware, phishing, botnet, ddos)
@@ -188,22 +178,26 @@ export async function fetchLiveThreats(options = { maxItems: 120 }) {
     dataSource: 'Simulated Threat Telemetry',
   }));
 
-  // Combined threats: Live CISA KEV on top, followed by multi-vector simulated telemetry
   const combined = [...realList, ...simulatedList];
 
   cachedThreats = {
     threats: combined,
-    sourceOrigin,
-    totalCount: (rawKev?.count || 1756) + simulatedList.length,
-    realCount: realList.length,
-    simulatedCount: simulatedList.length,
     catalogVersion: rawKev?.catalogVersion || '2026.10.23',
-    dateReleased: rawKev?.dateReleased || new Date().toISOString(),
     fetchedAt: new Date().toISOString(),
   };
 
-  lastFetchTime = Date.now();
   return cachedThreats;
+}
+
+function downloadFile(filename, content, type) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 export function exportToCSV(threats) {
@@ -219,24 +213,10 @@ export function exportToCSV(threats) {
     `"${(t.source || '').replace(/"/g, '""')}"`,
   ]);
   const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `cybertrace-threats-${new Date().toISOString().slice(0, 10)}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  downloadFile(`cybertrace-threats-${new Date().toISOString().slice(0, 10)}.csv`, csvContent, 'text/csv;charset=utf-8;');
 }
 
 export function exportToJSON(threats) {
   const jsonContent = JSON.stringify(threats, null, 2);
-  const blob = new Blob([jsonContent], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `cybertrace-threats-${new Date().toISOString().slice(0, 10)}.json`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  downloadFile(`cybertrace-threats-${new Date().toISOString().slice(0, 10)}.json`, jsonContent, 'application/json');
 }
